@@ -1,0 +1,35 @@
+# Multifactor Experiments 
+
+```{problem_description}
+Continue to use the same experiment setup from problem 1.  Now think about multifactor experiments. 
+```
+
+## Experiment design? 
+What is the full experimental design for this experiment?  Tell us the dimensions, such as 2x2x3. The full results appear in Panel 4B. We'll note that the dimensions of an experiment are defined in terms of the *treatments that the experiment assigns*, not in terms of other features about the data.  
+
+**Answer:** ...
+
+## Baseline for interpretation
+In the results of Table 4B, describe the baseline category. That is, in English, how would you describe the attributes of the group of people for whom all dummy variables are equal to zero?  
+
+**Answer:** ...
+
+## Bin without sticker effect
+In column (1) of Table 4B, interpret the magnitude of the coefficient on "bin without sticker."  What does it mean?  
+
+**Answer:** ...
+
+## With or without a sticker? 
+In column (1) of Table 4B, which seems to have a stronger treatment effect, the recycling bin with message sticker, or the recycling bin without sticker?  How large is the magnitude of the estimated difference?  
+
+**Answer:** ...
+
+## Statistical significantly different with or without a sticker? 
+Is this difference you just described statistically significant?  Explain which piece of information in the table allows you to answer this question.  
+
+**Answer:** ...
+
+## Fully saturated?
+Notice that Table 4C is described as results from "fully saturated" models.  What does this mean? What does David Reiley propose this definition means to him in the async lecture? What do the authors seem to think it means to them? Looking at the list of variables in the table, explain in what sense the model is "saturated."  
+
+**Answer:** ...

@@ -1,0 +1,96 @@
+# A Final Practice Problem 
+
+```{problem_description}
+Now for a fictional scenario. An emergency two-week randomized controlled trial of the experimental drug ZMapp is conducted to treat Ebola. (The control represents the usual standard of care for patients identified with Ebola, while the treatment is the usual standard of care plus the drug.) 
+
+Here are the (fake) data. 
+```
+
+```{r read data}
+d <- fread(input="../data/ebola_rct2.csv")
+```
+
+```{problem_description}
+You are asked to analyze it. Each patient has their temperature and whether they are dehydrated recorded on day 0 of the experiment, then ZMapp is administered to patients in the treatment group on day 1. Dehydration and temperature is again recorded on day 14.
+```
+
+## Simple treatment effect of Zmapp
+Without using any covariates, answer this question with regression: What is the estimated effect of ZMapp (with standard error in parentheses) on whether someone was dehydrated on day 14? What is the p-value associated with this estimate?
+
+```{r dehydration model, include=TRUE}
+zmapp_1 <- 'fill this in'
+```
+
+**Answer:** ...
+
+## Add baseline covariates
+Add covariates for dehydration on day 0 and patient temperature on day 0 to the regression from part (a) and report the ATE (with standard error). Also report the p-value.
+
+```{r add pre-treatment measures, include=TRUE}
+zmapp_2 <- 'fill this in'
+```
+
+**Answer:** ...
+
+## Interpret estimates 
+Do you prefer the estimate of the ATE reported in the chunk called `dehydration model` or `add pre-treatment measures`? Why? Report the results of the F-test that you used to form this opinion. 
+
+```{r test pre-treatment variable inclusion, include=TRUE}
+zmapp_test_object <- 'fill this in'
+```
+
+**Answer:** ...
+
+## Add day fourteen temperature 
+The regression from part `add pre-treatment measures` suggests that temperature is highly predictive of dehydration. Add, temperature on day 14 as a covariate and report the ATE, the standard error, and the p-value.
+
+```{r add day 14 temperature, include=TRUE}
+zmapp_3 <- 'fill this in'
+```
+
+**Answer:** ...
+
+## Interpret estimates
+Do you prefer the estimate of the ATE reported in part `add pre-treatment measures` or `add day 14 temperature`? What is this preference based on? 
+
+**Answer:** ...
+
+## Look at temperature
+Now let's switch from the outcome of dehydration to the outcome of temperature, and use the same regression covariates as in the chunk titled `add pre-treatment measures`. Test the hypothesis that ZMapp is especially likely to reduce mens' temperatures, as compared to womens', and describe how you did so. What do the results suggest?
+
+```{r heterogeneous treatment effects, include=TRUE}
+zmapp_4 <- 'fill this in'
+```
+
+**Answer:** ...
+
+## Compare health outcomes
+Which group -- those that are coded as `male == 0` or `male == 1` have better health outcomes (temperature) in control? What about in treatment? How does this help to contextualize whatever heterogeneous treatment effect you might have estimated? 
+
+```{r context for hte, include=TRUE}
+
+```
+
+**Answer:** ...
+
+## Collaborating with others, Part (1)
+Suppose you speak with a colleague to learn about heterogeneous treatment effects. 
+
+This colleague has access to a non-anonymized version of the same dataset and reports that they looked at heterogeneous effects of the ZMapp treatment by each of 80 different covariates to examine whether each predicted the effectiveness of ZMapp on each of 20 different indicators of health. 
+
+Across these regressions your colleague ran, the treatment's interaction with sex on the outcome of temperature is the only heterogeneous treatment effect that he found to be statistically significant. They reason that this shows the importance of sex for understanding the effectiveness of the drug, because nothing else seemed to indicate why it worked. Bolstering your colleague's confidence, after looking at the data, they also returned to their medical textbooks see the whispers of a theory about why ZMapp interacts with processes only present in men to cure. 
+
+Another doctor, unfamiliar with the data, hears your colleague's theory and finds it plausible. How likely do you think it is ZMapp works especially well for curing Ebola in men, and why? (This question is conceptual can be answered without performing any computation.)
+
+**Answer:** ...
+
+## Collaborating with others, Part (2)
+Suppose that your colleague conducted their research looking at the interaction of 80 covariates with ZMapp, but that you on your own tested this and only this HTE, and discovered a positive result. How, if at all, does your colleague's behavior change the interpretation of your test? Does this seem fair or reasonable?
+
+**Answer:** ...
+
+
+## Collaborating with others, Part (3)
+Now, imagine that your colleague had not conducted the 80 different regressions. Instead, they tested this heterogeneous treatment effect, and only this heterogeneous treatment effect, of their own accord. Would you be more or less inclined to believe that the heterogeneous treatment effect really exists? Why? Is there a general principle that is guiding your reasoning?
+
+**Answer:** ...

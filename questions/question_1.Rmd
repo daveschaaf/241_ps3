@@ -1,0 +1,72 @@
+# Peruvian Recycling 
+
+```{problem_description}
+Look at the article located here (./readings/recycling_peru.pdf) about encouraging recycling in Peru.  The paper contains two experiments, a "participation study" and a "participation intensity study."  In this problem, we will focus on the latter study, whose results are contained in Table 4 in this problem.  You will need to read the relevant section of the paper (starting on page 20 of the manuscript) in order to understand the experimental design and variables.  (*Note that "indicator variable" is a synonym for "dummy variable," in case you have not seen this language before.*)
+
+
+```
+
+## Recycling bin ATE
+In Column 3 of Table 4A, what is the estimated ATE of providing a recycling bin on the average weight of recyclables turned in per household per week, during the six-week treatment period?  Provide a 95% confidence interval.  Provide a short narrative using inline R code, such as `r inline_reference`.
+
+```{r, include = TRUE}
+# Use this code chunk to show your code work (if needed)
+
+```  
+
+**Answer:** ...
+
+## SMS ATE
+In Column 3 of Table 4A, what is the estimated ATE of sending a text message reminder on the average weight of recyclables turned in per household per week?  Provide a 95% confidence interval and provide a short narrative using inline R code.    
+
+```{r, include = TRUE}
+# Use this code chunk to show your code work (if needed)
+
+```  
+
+**Answer:** ...
+
+## What outcomes does a recycling bin affect? 
+Which outcome measures in Table 4A show statistically significant effects (at the 5% level) of providing a recycling bin? How are you dealing with the issue that there are several different tests that have been run, and that you are reading? How, if at all, do the authors deal with this? 
+
+**Answer:** ...
+
+## What outcomes does a SMS affect? 
+Which outcome measures in Table 4A show statistically significant effects (at the 5% level) of sending text messages? Now that you have read across two different treatments, and many outcomes, what, if anything do the p-values mean to you? Does this feel like p-hacking or doing careful investigation? 
+
+**Answer:** ...
+
+## Marginal effects
+Suppose that, during the two weeks before treatment, household A turns in 2kg per week more recyclables than household B does, and suppose that both households are otherwise identical (including being in the same treatment group).  From the model, how much more recycling do we predict household A to have than household B, per week, during the six weeks of treatment?   Provide only a point estimate, as the confidence interval would be a bit complicated.  This question is designed to test your understanding of slope coefficients in regression.  
+
+```{r, include = TRUE}
+# Use this code chunk to show your code work (if needed)
+
+```  
+
+**Answer:** ...
+
+## Covariates or confounders?
+Suppose that the variable "percentage of visits turned in bag, baseline" had been left out of the regression reported in Column 1.  What would you expect to happen to the results on providing a recycling bin?  Would you expect an increase or decrease in the estimated ATE?  Would you expect an increase or decrease in the standard error?  Explain your reasoning.  
+
+```{r, include = TRUE}
+# Use this code chunk to show your code work (if needed)
+
+```  
+
+**Answer:** ...
+
+## Bad control or useful subset? 
+In column 1 of Table 4A, would you say the variable "has cell phone" is a bad control?  Explain your reasoning, and engage both with the definition of a bad control, and also the implications of including a bad control in a model.  
+
+**Answer:** ...
+
+## What happens if you remove "has cell phone"? 
+If we were to remove the "has cell phone" variable from the regression, what would you expect to happen to the coefficient on "Any SMS message"?  Would it go up or down? Explain your reasoning.  
+
+```{r, include = TRUE}
+# Use this code chunk to show your code work (if needed)
+
+```  
+
+**Answer:** ...

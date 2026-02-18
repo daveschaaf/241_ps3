@@ -1,0 +1,102 @@
+# Now! Do it with data 
+```{problem_description}
+Download the data set for the recycling study in the previous problem, obtained from the authors. We will be focusing on the outcome variable Y="number of bins turned in per week" (avg_bins_treat).
+```
+
+```{r, include=FALSE}
+d <- foreign::read.dta("../data/karlan_data_subset_for_class.dta")
+d <- data.table(d)
+head(d)
+
+## Do some quick exploratory data analysis with this data. 
+## There are some values in this data that seem a bit strange. 
+
+## Determine what these are. 
+## Don't make an assessment about keeping, changing, or 
+## dropping just yet, but at any point that your analysis touches 
+## these variables, you'll have to determine what is appropriate 
+## given the analysis you are conducting. 
+
+
+```
+
+## Treatment only model
+A. For simplicity, let's start by measuring the effect of providing a recycling bin, ignoring the SMS message treatment (and ignoring whether there was a sticker on the bin or not).  Run a regression of Y on only the bin treatment dummy, so you estimate a simple difference in means.  Provide a 95% confidence interval for the treatment effect, using **of course** robust standard errors (use these throughout) and provide a brief narrative using R inline statements. 
+
+```{r estimate basic model, include=TRUE}
+mod_basic <- 'fill this in'
+## TODO, include code to print these estimates and robust standard errors to the screen
+## remove these comments once you've written that code.
+```  
+
+**Narrative: ...**
+
+## Treatment and pre-treatment values
+Now add the pre-treatment value of Y as a covariate.  Provide a 95% confidence interval for the treatment effect.  Explain how and why this confidence interval differs from the previous one.
+
+```{r add pre-treatment values, include=TRUE}
+mod_pretreat <- 'fill this in'
+## TODO, include code to print these estimates and robust standard errors to the screen
+## remove these comments once you've written that code.
+```  
+
+**Answer:** ...
+
+## Add state fixed effects
+Now add the street fixed effects.  (You'll need to use the R command `factor()` You can do this either within the `lm` call, or you can move this factoring up in the data pipeline so that it persists through the rest of your analysis. The only thing we would recommend that you *not* do is to engineer a new, persistent feature at this point.) Provide a 95% confidence interval for the treatment effect and provide a brief narrative using r inline statements.  
+
+```{r add fixed effects, include=TRUE}
+mod_fixed_effects <- 'fill this in'
+## TODO, include code to print these estimates and robust standard errors to the screen
+## remove these comments once you've written that code.
+```  
+
+**Narrative: ...**
+
+## Test for block fixed effects
+Recall that the authors described their experiment as "stratified at the street level," which is a synonym for blocking by street.  Does including these block fixed effects change the standard errors of the estimates *very much*? Conduct the appropriate test for the inclusion of these block fixed effects, and interpret them in the context of the other variables in the regression. 
+
+```{r test for fixed effects, include=TRUE}
+test_fixed_effects <- 'fill this in'
+## TODO, include code to print these estimates from the appropriate test
+```  
+
+**Answer:** ...
+
+## Feature (no) cell phone 
+Perhaps having a cell phone helps explain the level of recycling behavior. Instead of "has cell phone," we find it easier to interpret the coefficient if we define the variable " no cell phone."  Give the R command to define this new variable, which equals one minus the "has cell phone" variable in the authors' data set.  Use "no cell phone" instead of "has cell phone" in subsequent regressions with this dataset.
+
+```{r feature engineering mid-analysis (dont do this IRL!), include=TRUE}
+## rather than letting this feature engineering persist here -- which is 
+## bad practice because it requires that you keep in mind what code you 
+## have, and what code you have not run
+## 
+## instead, move this recode up to the top of your data loading in this file 
+## so that it runs everytime that you load your data
+```
+
+Now add "no cell phone" as a covariate to the previous regression.  Provide a 95% confidence interval for the treatment effect.  Explain why this confidence interval does not differ much from the previous one.
+
+```{r add cell-phone variable, include=TRUE}
+mod_cellphone <- 'fill this in'
+```  
+
+**Answer:** ...
+
+## Add the sms treatment
+Now let's add in the SMS treatment.  Re-run the previous regression with "any SMS" included.  You should get the same results as in Table 4A.  Provide a 95% confidence interval for the treatment effect of the recycling bin.  Explain why this confidence interval does not differ much from the previous one.
+
+```{r add sms treatment, include=TRUE}
+mod_sms <- 'fill this in'
+```  
+
+**Answer:** ...
+
+## Reproduce Table 4B, Column (2)
+Now reproduce the results of column 2 in Table 4B, estimating separate treatment effects for the two types of SMS treatments and the two types of recycling-bin treatments.  Provide a 95% confidence interval for the effect of the unadorned recycling bin.  Explain how your answer differs from that in question 3.6, and explain why you think it differs.
+
+```{r full model, include=TRUE}
+mod_full <- 'fill this in'
+```  
+
+**Answer:** ...
