@@ -1,35 +1,80 @@
+---
+title: "Question 2"
+---
 # Multifactor Experiments 
 
-```{problem_description}
 Continue to use the same experiment setup from problem 1.  Now think about multifactor experiments. 
+```{r load packages 2, warning=FALSE, message=FALSE, include=FALSE}
+library(data.table)
+
+library(sandwich)
+library(lmtest)
+
+library(ggplot2)
+library(patchwork)
+
+library(foreign)
+inline_reference <- "r inline_reference"
 ```
 
 ## Experiment design? 
 What is the full experimental design for this experiment?  Tell us the dimensions, such as 2x2x3. The full results appear in Panel 4B. We'll note that the dimensions of an experiment are defined in terms of the *treatments that the experiment assigns*, not in terms of other features about the data.  
 
-**Answer:** ...
+**Answer:**
+
+The experiment assign a treatment condition for Bins with 3 conditions: No bin, Bin without sticker, Bin with sticker, and a treatment condition for SMS with 3 conditions: No SMS, Personal message SMS, Generic SMS. This is a 3x3 experiment design.
+
 
 ## Baseline for interpretation
 In the results of Table 4B, describe the baseline category. That is, in English, how would you describe the attributes of the group of people for whom all dummy variables are equal to zero?  
 
-**Answer:** ...
+**Answer:**
+
+The baseline category represented no bin and no cell phone and therefore also no SMS. This group is the baseline for all treatment conditions and the baseline for the "has cell phone" variable too. This represents the behaviors of someone who is unaffected by any treatment condition who on average also fits the profile of the class that does not own cell phones (less wealthy, less concerned about local issues like recycling).
+
 
 ## Bin without sticker effect
 In column (1) of Table 4B, interpret the magnitude of the coefficient on "bin without sticker."  What does it mean?  
 
-**Answer:** ...
+**Answer:** 
+
+Columns (1) represents the percentage of visits that the household turned in a recycling bag or bin when they had the opportunity to. The coefficient is interpreted as percentage points, so the coefficient of 0.035 on "bin without sticker" is interpreted as an increase of 3.5 percentage points in in the frequency the household turned in a bag compared to baseline.
+
 
 ## With or without a sticker? 
 In column (1) of Table 4B, which seems to have a stronger treatment effect, the recycling bin with message sticker, or the recycling bin without sticker?  How large is the magnitude of the estimated difference?  
 
-**Answer:** ...
+**Answer:** 
+
+In column (1), the "bin with sticker" has treatment effect of 5.5 percentage points compared to "bin without sticker" at 3.5 percentage points. Both are significant, but the "bin with sticker" is significant at the 1% level while the "bin without sticker" is significant at the 5% level. Looking solely at these 2 numbers, the "bin with sticker" has a stronger treatment effect by 2.0 percentage points.
+
 
 ## Statistical significantly different with or without a sticker? 
 Is this difference you just described statistically significant?  Explain which piece of information in the table allows you to answer this question.  
 
-**Answer:** ...
+**Answer:** 
+
+The authors provide an F-test p-value that (1) bin with sticker = (2) bin without sticker. This test has a value of 0.31 in column (1), so this is not a statistically significant difference.
+
 
 ## Fully saturated?
 Notice that Table 4C is described as results from "fully saturated" models.  What does this mean? What does David Reiley propose this definition means to him in the async lecture? What do the authors seem to think it means to them? Looking at the list of variables in the table, explain in what sense the model is "saturated."  
 
-**Answer:** ...
+**Answer:** 
+
+A fully saturated model includes coefficients for all measurable variables and all possible interaction effects. David Reiley specifies that each value of the covariate and every possible interaction gets a different dummy variable to represent it, including every value of continuous variables (e.g. SAT scores 1400, 1410, 1420 etc. each have their own dummy variable). With a different coefficient on every possible variable, the model is non-linear for continuous variables because we have a point estimate for every individual value. 
+
+The authors present a fully saturated model in Table 4C. This model includes dummy variables for all possible treatment interactions of the Bin and SMS messaging treatments. It also includes a dimension for the "has cell phone" vs "no phone" groups, and a variable "has cell phone" which would change the baseline for the group in the SMS experiment. While not an experimental treatment, it does create another split in the data. Notably, their version of a fully saturated model does not include dummy variables and interactions with the baseline measurement in the pre-treatment phase, which remains as a continuous variable.
+
+
+| Bin Treatment with Has cell phone | No SMS | Generic | Personal |
+| :--- | :--- | :--- | :--- |
+| **No Bin** | yes | yes | yes |
+| **Bin without sticker** | yes | yes | yes |
+| **Bin with sticker** | yes | yes | yes |
+
+| Bin Treatment with No phone | No Cell Phone |
+| :--- | :--- | :--- | :--- |
+| **No Bin** | Baseline |
+| **Bin without sticker** | yes |
+| **Bin with sticker** | yes | 

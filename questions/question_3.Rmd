@@ -1,7 +1,44 @@
+---
+title: "Question 3"
+---
 # Now! Do it with data 
-```{problem_description}
+
 Download the data set for the recycling study in the previous problem, obtained from the authors. We will be focusing on the outcome variable Y="number of bins turned in per week" (avg_bins_treat).
+```{r load packages 3, warning=FALSE, message=FALSE, include=FALSE}
+library(data.table)
+library(scales)
+
+library(sandwich)
+library(lmtest)
+library(stargazer)
+
+library(ggplot2)
+library(patchwork)
+
+library(foreign)
+inline_reference <- "r inline_reference"
 ```
+
+```{r ci}
+
+ci_95 <- function(model, variable) {
+  model_coef <- coef(model)[variable]
+  model_rse <- sqrt(diag(vcovHC(model)))  # always use robust standard errors
+  model_coef_rse <- model_rse[variable]
+  deg_f <- model$df.residual
+  model_var_crit_1_side <- qt(0.975, deg_f) * model_coef_rse
+  model_var_lower <- round(model_coef - model_var_crit_1_side, 3)
+  model_var_upper <- round(model_coef + model_var_crit_1_side, 3)
+  
+  return(list(
+    coef = round(model_coef,3),
+    se = round(model_coef_rse,3),
+    lower = model_var_lower,
+    upper = model_var_upper
+  ))
+}
+```
+
 
 ```{r, include=FALSE}
 d <- foreign::read.dta("../data/karlan_data_subset_for_class.dta")
@@ -16,87 +53,245 @@ head(d)
 ## dropping just yet, but at any point that your analysis touches 
 ## these variables, you'll have to determine what is appropriate 
 ## given the analysis you are conducting. 
+summary(d)
+unique(d$street)
+sum(d$street == -999, na.rm = TRUE)
 
+```
 
+```{r cell_phone}
+### Data Transformation: no cell phone
+
+d[,'no_cell_phone'] <- 1 - d[,'havecell'] 
+head(d)
 ```
 
 ## Treatment only model
 A. For simplicity, let's start by measuring the effect of providing a recycling bin, ignoring the SMS message treatment (and ignoring whether there was a sticker on the bin or not).  Run a regression of Y on only the bin treatment dummy, so you estimate a simple difference in means.  Provide a 95% confidence interval for the treatment effect, using **of course** robust standard errors (use these throughout) and provide a brief narrative using R inline statements. 
 
-```{r estimate basic model, include=TRUE}
-mod_basic <- 'fill this in'
-## TODO, include code to print these estimates and robust standard errors to the screen
-## remove these comments once you've written that code.
+```{r estimate basic model, include=TRUE, warning = FALSE, results='asis'}
+
+mod_basic <- lm(avg_bins_treat ~ bin , data = d)
+mod_basic_rse <- sqrt(diag(vcovHC(mod_basic)))
+
+mod_basic_ci <- ci_95(mod_basic, 'bin')
+
+mod_basic_bin_coef <- mod_basic_ci$coef["bin"]
+mod_basic_bin_rse <- mod_basic_ci$se['bin']
+mod_basic_bin_lower <- mod_basic_ci$lower['bin']
+mod_basic_bin_upper <- mod_basic_ci$upper['bin']
+
+stargazer(mod_basic,
+          se = list(mod_basic_rse),
+          covariate.labels = c("Any bin", "Constant"),
+          dep.var.labels = c("Avg \\# Visits Turned In"),
+          type='latex', header=FALSE)
 ```  
 
-**Narrative: ...**
+
+**Narrative:**
+
+The basic model regresses the average number of bins turned in on the bin treatment indicator with no controls. The coefficient for the bin treatment is `r mod_basic_bin_coef` with a heteroskedastic consistent standard error of `r mod_basic_bin_rse`. This is significant at the 1% level with a 95% confidence interval of [`r mod_basic_bin_lower`, `r mod_basic_bin_upper`].
+
 
 ## Treatment and pre-treatment values
 Now add the pre-treatment value of Y as a covariate.  Provide a 95% confidence interval for the treatment effect.  Explain how and why this confidence interval differs from the previous one.
 
-```{r add pre-treatment values, include=TRUE}
-mod_pretreat <- 'fill this in'
-## TODO, include code to print these estimates and robust standard errors to the screen
-## remove these comments once you've written that code.
+```{r street_transformation}
+### Data Transformation: Street
+# convert to a factor variable
+d$street = factor(d$street)
+
+
+# we want to compare the pre-treatment baseline to the
+# pre-treatment baseline with street fixed effects
+# to do that we must have the same number of observations
+# 3 values of street are missing data
+# Drop the NA values
+d <- d[is.na(d$street) == FALSE]
+# confirm we have 1782 observations at this point
+length(d$street)
+```
+
+
+```{r add pre-treatment values, include=TRUE, warning = FALSE, results='asis'}
+
+mod_pretreat <- lm(avg_bins_treat ~ bin + base_avg_bins_treat, data = d)
+mod_pretreat_rse <- sqrt(diag(vcovHC(mod_pretreat)))
+
+mod_pretreat_ci <- ci_95(mod_pretreat, 'bin')
+
+mod_pretreat_bin_coef <- mod_pretreat_ci$coef["bin"]
+mod_pretreat_bin_rse <- mod_pretreat_ci$se['bin']
+mod_pretreat_bin_lower <- mod_pretreat_ci$lower['bin']
+mod_pretreat_bin_upper <- mod_pretreat_ci$upper['bin']
+mod_pretreat_r2 <- r2 <- round(summary(mod_pretreat)$r.squared, 3)
+stargazer(mod_pretreat,
+          se = list(mod_pretreat_rse),
+          covariate.labels = c("Any bin", "Pre-treat Baseline","Constant"),
+          dep.var.labels = c("Avg \\# Visits Turned In"),
+          type='latex', header=FALSE)
 ```  
 
-**Answer:** ...
+**Answer:** 
 
-## Add state fixed effects
+The pre-treatment adjusted model regresses the average number of bins turned in on the bin treatment indicator with a control for the households baseline number of bins turn per week in pre-treatment. The coefficient for the bin treatment decreases from the basic model to `r mod_pretreat_bin_coef` with a heteroskedastic consistent standard error of `r mod_pretreat_bin_rse`, which is also less than the basic model's standard error. This is significant at the 1% level with a 95% confidence interval of [`r mod_pretreat_bin_lower`, `r mod_pretreat_bin_upper`].
+
+
+## Add street fixed effects
 Now add the street fixed effects.  (You'll need to use the R command `factor()` You can do this either within the `lm` call, or you can move this factoring up in the data pipeline so that it persists through the rest of your analysis. The only thing we would recommend that you *not* do is to engineer a new, persistent feature at this point.) Provide a 95% confidence interval for the treatment effect and provide a brief narrative using r inline statements.  
 
-```{r add fixed effects, include=TRUE}
-mod_fixed_effects <- 'fill this in'
-## TODO, include code to print these estimates and robust standard errors to the screen
-## remove these comments once you've written that code.
+
+```{r add fixed effects, include=TRUE, warning = FALSE, results='asis'}
+mod_fixed_effects <- lm(avg_bins_treat ~ bin +
+                          base_avg_bins_treat + street, data = d)
+
+mod_fe_se <- sqrt(diag(vcovHC(mod_fixed_effects)))
+
+mod_fe_ci <- ci_95(mod_fixed_effects, 'bin')
+
+mod_fe_bin_coef <- mod_fe_ci$coef["bin"]
+mod_fe_bin_rse <- mod_fe_ci$se['bin']
+mod_fe_bin_lower <- mod_fe_ci$lower['bin']
+mod_fe_bin_upper <- mod_fe_ci$upper['bin']
+mod_fe_r2 <- r2 <- round(summary(mod_fixed_effects)$r.squared, 3)
+stargazer(mod_fixed_effects,
+          se = list(mod_fe_se),
+          omit = "street",
+          omit.labels = "Street Fixed Effects",
+          covariate.labels = c("Any bin", "Pre-treat Baseline", "Constant"),
+          dep.var.labels = c("Avg \\# Visits Turned In"),
+          type='latex', header=FALSE)
+
+mod_fixed_effects$coefficients["(Intercept)"]
 ```  
 
-**Narrative: ...**
+**Narrative:**
+
+The model now includes the household baseline and fixed effects for the street. The coefficient for the bin treatment decreases again to `r mod_fe_bin_coef` with a heteroskedastic consistent standard error of `r mod_fe_bin_rse`, which has increased from the model with baseline. This is still significant at the 1% level with a 95% confidence interval of [`r mod_fe_bin_lower`, `r mod_fe_bin_upper`].
+
 
 ## Test for block fixed effects
 Recall that the authors described their experiment as "stratified at the street level," which is a synonym for blocking by street.  Does including these block fixed effects change the standard errors of the estimates *very much*? Conduct the appropriate test for the inclusion of these block fixed effects, and interpret them in the context of the other variables in the regression. 
 
 ```{r test for fixed effects, include=TRUE}
-test_fixed_effects <- 'fill this in'
-## TODO, include code to print these estimates from the appropriate test
+test_fixed_effects <- anova(mod_pretreat, mod_fixed_effects, test = "F")
+test_fe_f <- test_fixed_effects$F[2]
+test_fe_p <- test_fixed_effects$`Pr(>F)`[2]
+
+change_se <- percent((mod_fe_bin_rse - mod_pretreat_bin_rse)/mod_pretreat_bin_rse)
+test_fixed_effects
 ```  
 
-**Answer:** ...
+**Answer:** 
+
+The baseline model without street fixed effects has a standard error of `r mod_pretreat_bin_rse` which increase `r change_se` to `r mod_fe_bin_rse` after the fixed effects are included. I performed an F test comparing the pre-treatment model and the pre-treatment with street fixed effects model. The F statistic is significant at the 0.1% level. Inclusion of the 179 new variables reduces the degrees of freedom from `r test_fixed_effects$Res.Df[1]` to `r test_fixed_effects$Res.Df[2]` which changes the calculation of variance enough to increase the standard error on the bin coefficient, while simultaneously increasing R-squared from `r mod_pretreat_r2` to `r mod_fe_r2`. The street fixed effects explain more of the variance in the model than the baseline alone model, but it does not improve the precision of the estimate on the bin treatment.
 
 ## Feature (no) cell phone 
 Perhaps having a cell phone helps explain the level of recycling behavior. Instead of "has cell phone," we find it easier to interpret the coefficient if we define the variable " no cell phone."  Give the R command to define this new variable, which equals one minus the "has cell phone" variable in the authors' data set.  Use "no cell phone" instead of "has cell phone" in subsequent regressions with this dataset.
 
-```{r feature engineering mid-analysis (dont do this IRL!), include=TRUE}
-## rather than letting this feature engineering persist here -- which is 
-## bad practice because it requires that you keep in mind what code you 
-## have, and what code you have not run
-## 
-## instead, move this recode up to the top of your data loading in this file 
-## so that it runs everytime that you load your data
-```
+Now add "no cell phone" as a covariate to the previous regression. Provide a 95% confidence interval for the treatment effect.  Explain why this confidence interval does not differ much from the previous one.
 
-Now add "no cell phone" as a covariate to the previous regression.  Provide a 95% confidence interval for the treatment effect.  Explain why this confidence interval does not differ much from the previous one.
+```{r add cell-phone variable, include=TRUE, warning=FALSE, results='asis'}
+mod_cellphone <- lm(avg_bins_treat ~ bin + no_cell_phone +
+                      base_avg_bins_treat + street, data = d)
 
-```{r add cell-phone variable, include=TRUE}
-mod_cellphone <- 'fill this in'
+mod_cell_rse <- sqrt(diag(vcovHC(mod_cellphone)))
+
+mod_cell_ci <- ci_95(mod_cellphone, 'bin')
+
+mod_cell_coef <- mod_cell_ci$coef["bin"]
+mod_cell_coef_rse <- mod_cell_ci$se['bin']
+mod_cell_lower <- mod_cell_ci$lower['bin']
+mod_cell_upper <- mod_cell_ci$upper['bin']
+
+mod_cell_const <- mod_cellphone$coefficients["(Intercept)"]
+mod_cell_no_phone_const <- mod_cell_const + mod_cellphone$coefficients["no_cell_phone"]
+
+stargazer(mod_cellphone,
+          se = list(mod_cell_rse),
+          omit = "street",
+          omit.labels = "Street Fixed Effects",
+          covariate.labels = c("Any bin", "No cell phone","Pre-treat Baseline",  "Constant"),
+          dep.var.labels = c("Avg \\# Visits Turned In"),
+          type='latex', header=FALSE)
 ```  
 
-**Answer:** ...
+**Answer:** 
+
+We can define the new variable for no cell phone by `d[,'no_cell_phone'] <- 1 - d[,'havecell']`, which creates a new variable in the data table with `1` for no cell phone and `0` for has cell phone. This variable has been made at the top of the document as suggested.
+
+The coefficient for the any bin treatment effect is `r mod_cell_coef` with a heteroskedastic consistent standard error of `r mod_cell_coef_rse`. This is significant at the 1% level with a 95% confidence interval of [`r mod_cell_lower`, `r mod_cell_upper`]. 
+
+The treatment effect of the bin remains similar to the previous model because the bin treatment was assigned independent of the cell phone status. If there were some correlation between cell phone and the treatment, even if incidental, the model would pick up on that and show a more substantial change in the confidence interval. Because this is not correlated with the treatment, we can view this variable as dividing the subjects into 2 segments based on this pre-treatment factor. In the previous model there the Constant term was `r round(mod_fixed_effects$coefficients["(Intercept)"],3)` for all participants regardless of their cell phone status. By including this the "no cell phone" variable, the Constant (`r round(mod_cell_const,3)`) of this model now reflects only those households _with_ a cell phone. For the group with no cell phone we adjust this value by the coefficient on "no cell phone" to get a value of `r round(mod_cell_no_phone_const,3)` before we consider the baseline or bin treatment. 
+
 
 ## Add the sms treatment
 Now let's add in the SMS treatment.  Re-run the previous regression with "any SMS" included.  You should get the same results as in Table 4A.  Provide a 95% confidence interval for the treatment effect of the recycling bin.  Explain why this confidence interval does not differ much from the previous one.
 
-```{r add sms treatment, include=TRUE}
-mod_sms <- 'fill this in'
+```{r add sms treatment, include=TRUE, warning=FALSE, results='asis'}
+
+mod_sms <- lm(avg_bins_treat ~ bin + sms + no_cell_phone +
+                base_avg_bins_treat + street, data = d)
+
+mod_sms_rse <- sqrt(diag(vcovHC(mod_sms)))
+
+mod_sms_ci <- ci_95(mod_sms, 'bin')
+
+mod_sms_coef <- mod_sms_ci$coef["bin"]
+mod_sms_coef_rse <- mod_sms_ci$se['bin']
+mod_sms_lower <- mod_sms_ci$lower['bin']
+mod_sms_upper <- mod_sms_ci$upper['bin']
+
+stargazer(mod_sms,
+          se = list(mod_sms_rse),
+          omit = "street",
+          omit.labels = "Street Fixed Effects",
+          covariate.labels = c("Any bin", "Any SMS", "No cell phone",
+                               "Pre-treat Baseline", "Constant"),
+          dep.var.labels = c("Avg \\# Visits Turned In"),
+          type='latex', header=FALSE)
 ```  
 
-**Answer:** ...
+**Answer:** 
+
+The coefficient for the any bin treatment effect is `r mod_sms_coef` with a heteroskedastic consistent standard error of `r mod_sms_coef_rse`. This is significant at the 1% level with a 95% confidence interval of [`r mod_sms_lower`, `r mod_sms_upper`]. 
+
+This model includes the second treatment condition for SMS messaging, which is weak at `r round(mod_sms$coefficients["sms"],3)` and not statistically significant. The treatment assignment of SMS is independent of the treatment assignment to the bin condition. That is evidence that the randomization procedure avoided any interference between the 2 treatments through the assignment process. Because there is no correlation with the bin treatment, inclusion of the SMS variable does not meaningfully change the confidence interval for the bin treatment effect.
+
+It appears the authors use standard errors in their reporting rather than heteroskedastic consistent errors. The coefficients of this model match the reported coefficients in Table 4A, but the errors differ due to the treatment of heteroskedasticity.
 
 ## Reproduce Table 4B, Column (2)
 Now reproduce the results of column 2 in Table 4B, estimating separate treatment effects for the two types of SMS treatments and the two types of recycling-bin treatments.  Provide a 95% confidence interval for the effect of the unadorned recycling bin.  Explain how your answer differs from that in question 3.6, and explain why you think it differs.
 
-```{r full model, include=TRUE}
-mod_full <- 'fill this in'
+```{r full model, include=TRUE, warning=FALSE, results='asis'}
+
+mod_full <- lm(avg_bins_treat ~ bin_s + bin_g + sms_p + sms_g + no_cell_phone + base_avg_bins_treat + street, data = d)
+
+mod_full_rse <- sqrt(diag(vcovHC(mod_full)))
+
+mod_full_ci <- ci_95(mod_full, 'bin_g')
+
+mod_full_coef <- mod_full_ci$coef["bin_g"]
+mod_full_coef_rse <- mod_full_ci$se['bin_g']
+mod_full_lower <- mod_full_ci$lower['bin_g']
+mod_full_upper <- mod_full_ci$upper['bin_g']
+
+
+stargazer(mod_full,
+          se = list(mod_full_rse),
+          omit = "street",
+          omit.labels = "Street Fixed Effects",
+          covariate.labels = c("Bin with sticker", "Bin without sticker ",
+                               "Personal SMS message","Generic SMS message",
+                               "No cell phone", "Pre-treat Baseline", "Constant"),
+          dep.var.labels = c("Avg \\# Visits Turned In"),
+          type='latex', header=FALSE)
 ```  
 
-**Answer:** ...
+**Answer:** 
+The coefficient for the Bin without sticker treatment effect is `r mod_full_coef` with a heteroskedastic consistent standard error of `r mod_full_coef_rse`. This is significant at the 1% level with a 95% confidence interval of [`r mod_full_lower`, `r mod_full_upper`]. 
+
+This model splits the Any bin treatment into 2 groups based on the sticker status of the bin. The coefficient that as being measured in previous model is now split into 2 groups based on a treatment condition. It is not unexpected to see a change in the coefficient and standard errors here. There are fewer participants in this group compared to the previous Any bin variable which combined Bin with stick and Bin without sticker, so the standard error is higher going from `r mod_sms_coef_rse` for Any bin to `r mod_full_coef_rse` for Bin without sticker. The coefficient is lower because Any bin was essentially a weighted average of the 2 new coefficients for the sticker status. By splitting it into coefficients measuring with and without sticker separately, we can see that Bin with sticker has a slightly larger magnitude of effect.
+
+Again, the authors use standard errors in their reporting rather than heteroskedastic consistent errors. The coefficients of this model match the reported coefficients in Table 4B, but the errors differ due to the treatment of heteroskedasticity.

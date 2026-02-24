@@ -1,8 +1,8 @@
 ---
-title: "Problem Set 3"
-author: "Alex, Micah, Scott, and David"
-date: "12/01/2021"
-name: "YOUR NAME HERE"
+title: "DATASCI 241: Problem Set 3"
+author: "David Schaaf"
+date: "Feb 24, 2026"
+name: "David Schaaf"
 output: 
   pdf_document: 
     number_sections: true
@@ -15,19 +15,6 @@ knitr::opts_chunk$set(include = FALSE, message = FALSE, warning = FALSE )
 knitr::knit_engines$set(problem_description = function(options) {
   code <- paste(options$code, collapse = "\n")
 })
-```
-
-```{r load packages, warning=FALSE, message=FALSE}
-library(data.table)
-
-library(sandwich)
-library(lmtest)
-
-library(ggplot2)
-library(patchwork)
-
-library(foreign)
-inline_reference <- "r inline_reference"
 ```
 
 \tableofcontents

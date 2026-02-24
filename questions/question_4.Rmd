@@ -1,77 +1,205 @@
+---
+title: "Question 4"
+---
 # A Final Practice Problem 
 
-```{problem_description}
 Now for a fictional scenario. An emergency two-week randomized controlled trial of the experimental drug ZMapp is conducted to treat Ebola. (The control represents the usual standard of care for patients identified with Ebola, while the treatment is the usual standard of care plus the drug.) 
 
 Here are the (fake) data. 
+```{r load packages 4, warning=FALSE, message=FALSE, include=FALSE}
+library(data.table)
+
+library(sandwich)
+library(lmtest)
+
+library(ggplot2)
+library(patchwork)
+library(stargazer)
+
+library(foreign)
+inline_reference <- "r inline_reference"
 ```
 
 ```{r read data}
 d <- fread(input="../data/ebola_rct2.csv")
+head(d)
 ```
 
-```{problem_description}
 You are asked to analyze it. Each patient has their temperature and whether they are dehydrated recorded on day 0 of the experiment, then ZMapp is administered to patients in the treatment group on day 1. Dehydration and temperature is again recorded on day 14.
-```
 
 ## Simple treatment effect of Zmapp
 Without using any covariates, answer this question with regression: What is the estimated effect of ZMapp (with standard error in parentheses) on whether someone was dehydrated on day 14? What is the p-value associated with this estimate?
 
-```{r dehydration model, include=TRUE}
-zmapp_1 <- 'fill this in'
+```{r lm_results, include=FALSE}
+lm_results <- function(model, variable) {
+  hc_se <- sqrt(diag(vcovHC(model)))
+  zmapp_coef <- round(coef(model)[variable],3)
+  zmapp_coef_se <- round(hc_se[variable],3)
+  zmapp_coef_p <- round(summary(model)$coefficients[variable, "Pr(>|t|)"],3)
+  
+  return(list(
+    model_se = hc_se,
+    zmapp_coef = round(zmapp_coef,3),
+    zmapp_coef_se = round(zmapp_coef_se,3),
+    zmapp_coef_p = round(zmapp_coef_p,3)
+  ))
+} 
 ```
 
-**Answer:** ...
+```{r dehydration model, include=TRUE, results = 'asis', warning=FALSE}
+zmapp_1 <- lm(dehydrated_day14 ~ treat_zmapp, data=d)
+
+zmapp_1_results <- lm_results(zmapp_1, 'treat_zmapp')
+
+zmapp_1_se <- zmapp_1_results['model_se']
+zmapp_1_coef <- zmapp_1_results['zmapp_coef']
+zmapp_1_coef_se <- zmapp_1_results['zmapp_coef_se']
+zmapp_1_coef_p <- zmapp_1_results['zmapp_coef_p']
+
+
+stargazer(zmapp_1,
+          se = zmapp_1_se,
+          covariate.labels = c("Treated with ZMapp"),
+          dep.var.labels = c("Dehydrated on Day 14"),
+          type='latex', header=FALSE)
+
+
+```
+
+**Answer:** 
+
+The estimated effect of Treated with ZMapp is `r zmapp_1_coef` (`r zmapp_1_coef_se`). Using heterosketastic consistent standard errors this is significant at the 1% level (p = `r zmapp_1_coef_p`)
+
 
 ## Add baseline covariates
 Add covariates for dehydration on day 0 and patient temperature on day 0 to the regression from part (a) and report the ATE (with standard error). Also report the p-value.
 
-```{r add pre-treatment measures, include=TRUE}
-zmapp_2 <- 'fill this in'
+```{r add pre-treatment measures, include=TRUE, warning=FALSE, results='asis'}
+zmapp_2 <-  lm(dehydrated_day14 ~ treat_zmapp + dehydrated_day0 +
+                 temperature_day0, data=d)
+
+zmapp_2_results <- lm_results(zmapp_2, 'treat_zmapp')
+
+zmapp_2_se <- zmapp_2_results['model_se']
+zmapp_2_coef <- zmapp_2_results['zmapp_coef']
+zmapp_2_coef_se <- zmapp_2_results['zmapp_coef_se']
+zmapp_2_coef_p <- zmapp_2_results['zmapp_coef_p']
+
+stargazer(zmapp_2,
+          se = zmapp_2_se,
+          covariate.labels = c("Treated with ZMapp", "Dehydrated on Day 0",
+                               "Temperature on Day 0"),
+          dep.var.labels = c("Dehydrated on Day 14"),
+          type='latex', header=FALSE)
 ```
 
-**Answer:** ...
+**Answer:** 
+
+The estimated effect of Treated with ZMapp is `r as.numeric(zmapp_2_coef)` (`r as.numeric(zmapp_2_coef_se)`) when including covariates for temperature on day 0 and dehydrated on day 0. Using heterosketastic consistent standard errors this is significant at the 5% level (p = `r zmapp_2_coef_p`)
 
 ## Interpret estimates 
 Do you prefer the estimate of the ATE reported in the chunk called `dehydration model` or `add pre-treatment measures`? Why? Report the results of the F-test that you used to form this opinion. 
 
 ```{r test pre-treatment variable inclusion, include=TRUE}
-zmapp_test_object <- 'fill this in'
+zmapp_test_object <- anova(zmapp_1, zmapp_2, test="F")
+
+test_zm_f <- zmapp_test_object$F[2]
+test_zm_rss_1 <- round(zmapp_test_object$`RSS`[1],3)
+test_zm_rss_2 <- round(zmapp_test_object$`RSS`[2],3)
+test_zm_p <- sprintf("%.4f", zmapp_test_object$`Pr(>F)`[2])
+
+zmapp_test_object
 ```
 
-**Answer:** ...
+**Answer:** 
+
+I prefer the pre-treatment measures model because it accounts for the pre-treatment condition of the patients, which is correlated with their dehydrated status 14 days later. The F-test confirms the improvement is significant: F = `r round(test_zm_f, 3)`, p = `r test_zm_p` (<0.1%), with RSS falling from `r test_zm_rss_1` to `r test_zm_rss_2`. 
+
 
 ## Add day fourteen temperature 
 The regression from part `add pre-treatment measures` suggests that temperature is highly predictive of dehydration. Add, temperature on day 14 as a covariate and report the ATE, the standard error, and the p-value.
 
-```{r add day 14 temperature, include=TRUE}
-zmapp_3 <- 'fill this in'
+```{r add day 14 temperature, include=TRUE, warning=FALSE, results='asis'}
+zmapp_3 <-  lm(dehydrated_day14 ~ treat_zmapp + temperature_day14 +
+                 dehydrated_day0 + temperature_day0 , data=d)
+
+zmapp_3_results <- lm_results(zmapp_3, 'treat_zmapp')
+
+zmapp_3_se <- zmapp_3_results['model_se']
+zmapp_3_coef <- zmapp_3_results['zmapp_coef']
+zmapp_3_coef_se <- zmapp_3_results['zmapp_coef_se']
+zmapp_3_coef_p <- zmapp_3_results['zmapp_coef_p']
+
+stargazer(zmapp_3,
+          se = zmapp_3_se,
+          covariate.labels = c("Treated with ZMapp", "Temperature on Day 14",
+                               "Dehydrated on Day 0", "Temperature on Day 0"),
+          dep.var.labels = c("Dehydrated on Day 14"),
+          type='latex', header=FALSE)
 ```
 
-**Answer:** ...
+**Answer:** 
+
+The estimated effect of Treated with ZMapp is `r as.numeric(zmapp_3_coef)` (`r as.numeric(zmapp_3_coef_se)`) when including covariates for temperature on day 14, temperature on day 0, and dehydrated on day 0. Using heterosketastic consistent standard errors this is not significant (p = `r zmapp_3_coef_p`).
 
 ## Interpret estimates
 Do you prefer the estimate of the ATE reported in part `add pre-treatment measures` or `add day 14 temperature`? What is this preference based on? 
 
-**Answer:** ...
+**Answer:** 
+
+I prefer the model with just pre-treatment measures because temperature on day 14 is a bad control. The temperature on day 14 is a post-treatment covariate that may also be affected by the Zmapp treatment. Post-treatment covariates could block the model from properly attributing that variation in dehydration on day 14 caused by Zmapp, biasing the estimate toward zero.
 
 ## Look at temperature
 Now let's switch from the outcome of dehydration to the outcome of temperature, and use the same regression covariates as in the chunk titled `add pre-treatment measures`. Test the hypothesis that ZMapp is especially likely to reduce mens' temperatures, as compared to womens', and describe how you did so. What do the results suggest?
 
-```{r heterogeneous treatment effects, include=TRUE}
-zmapp_4 <- 'fill this in'
+```{r heterogeneous treatment effects, include=TRUE, warning=FALSE, results='asis'}
+zmapp_4 <-  lm(temperature_day14 ~ treat_zmapp + dehydrated_day0 +
+                 temperature_day0 + male + treat_zmapp * male, data=d)
+
+zmapp_4_se <- sqrt(diag(vcovHC(zmapp_4)))
+
+
+zmapp_4_coef_zmapp <- summary(zmapp_4)$coefficients[ 'treat_zmapp','Estimate']
+
+zmapp_4_coef_male <- summary(zmapp_4)$coefficients[ 'male','Estimate']
+
+zmapp_4_coef_malexzmapp <- summary(zmapp_4)$coefficients[ 'treat_zmapp:male','Estimate']
+zmapp_4_coef_malexzmapp_p <- sprintf("%.4f",summary(zmapp_4)$coefficients[ 'treat_zmapp:male','Pr(>|t|)'])
+
+
+stargazer(zmapp_4,
+          se = list(zmapp_4_se),
+          covariate.labels = c("Treated with ZMapp","Dehydrated on Day 0",
+                               "Temperature on Day 0", "Male",
+                               "Treated with ZMapp x Male"),
+          dep.var.labels = c("Temperature on Day 14"),
+          type='latex', header=FALSE)
+
 ```
 
-**Answer:** ...
+**Answer:** 
+
+To test the hypothesis that ZMapp has a heterogeneous treatment effect on day 14 temperature by gender, I added the covariate for male and the interaction between male and the ZMapp treatment to the regression model. Without ZMapp, men have a temperature `r round(zmapp_4_coef_male,3)` degrees higher than women. The ZMapp treatment reduced temperature for women by `r round(zmapp_4_coef_zmapp,3)` degrees. The Male x Zmapp interaction term is `r round(zmapp_4_coef_malexzmapp, 3)`  (p = `r zmapp_4_coef_malexzmapp_p`), which is a statistically significant difference in treatment effect. The total treatment effect for men is `r round(zmapp_4_coef_zmapp,3)` + `r round(zmapp_4_coef_malexzmapp, 3)` = `r round(zmapp_4_coef_malexzmapp + zmapp_4_coef_zmapp,3)`. This supports the hypothesis that ZMapp has a heterogeneous treatment effect on men's and women's temperatures.
 
 ## Compare health outcomes
 Which group -- those that are coded as `male == 0` or `male == 1` have better health outcomes (temperature) in control? What about in treatment? How does this help to contextualize whatever heterogeneous treatment effect you might have estimated? 
 
 ```{r context for hte, include=TRUE}
 
+temps_matrix <- d[, .(mean_temp = mean(temperature_day14)), keyby = .(treat_zmapp, male)]
+
+control_w <- round(temps_matrix$mean_temp[1],2)
+control_m <- round(temps_matrix$mean_temp[2],2)
+treat_w <- round(temps_matrix$mean_temp[3],2)
+treat_m <- round(temps_matrix$mean_temp[4],2)
+
+temps_matrix
 ```
 
-**Answer:** ...
+**Answer:** 
+
+In control, women have a lower day 14 temperature than men, `r control_w` compared to `r control_m`. After treatment, women's average temperature fell slightly to `r treat_w`, and men's average temperature fell `r round(treat_m - control_m,2)` degrees to `r treat_m`. The treatment effect is stronger in `male == 1` because Ebola has a different effect on men's and women's temperatures in this study. 
+
 
 ## Collaborating with others, Part (1)
 Suppose you speak with a colleague to learn about heterogeneous treatment effects. 
@@ -82,15 +210,32 @@ Across these regressions your colleague ran, the treatment's interaction with se
 
 Another doctor, unfamiliar with the data, hears your colleague's theory and finds it plausible. How likely do you think it is ZMapp works especially well for curing Ebola in men, and why? (This question is conceptual can be answered without performing any computation.)
 
-**Answer:** ...
+**Answer:** 
+
+Our colleague has performed 1,600 tests (80 covariates x 20 outcomes), and only 1 of those tests (ZMapp x Sex) showed a heterogeneous treatment effect that is statistically significant. The high volume of tests conducted is a red flag in this situation and we should be cautious to draw any conclusions about significant results. With that many tests using $\alpha = 0.05$, there should be some that register as statistically significant on pure random chance. The fact that only 1 is significant could be a sign of a testing procedure error, as we would expect 1,600 x 0.05 = 80 tests to be significant on average. I would be very suspect of this result until it has been more thoroughly tested, ideally in a separate follow-up experiment.
+
+With respect to the temperature and sex interaction specifically, our colleague may be missing the full story in the data. In the control group, men have an elevated temperature compared to women that is statistically significant. This is really the big question of the study: why do the women who were untreated exhibit a normal temperature on average while men exhibit a fever under the same conditions? The colleague is looking at the change in temperature between men in control and men in treatment, but they need to look at the difference in temperature for men in control and women in control before they can make the claim that ZMapp has a heterogeneous treatment effect.
+
 
 ## Collaborating with others, Part (2)
 Suppose that your colleague conducted their research looking at the interaction of 80 covariates with ZMapp, but that you on your own tested this and only this HTE, and discovered a positive result. How, if at all, does your colleague's behavior change the interpretation of your test? Does this seem fair or reasonable?
 
-**Answer:** ...
+**Answer:** 
+
+The prior knowledge in this situation has a big impact on the interpretation of results.
+
+If we have prior knowledge that 1,599 tests are not worth executing, but we go and verify the result of the 1 test that is significant, we cannot draw a major conclusion about the heterogeneous treatment effect from that. To use an analogy, our colleague found the needle in the haystack, and told us exactly where to find it. The evidence for a heterogeneous treatment effect is weak, and our 1 test does nothing to strengthen the case.
+
+If we run one and only one test with no prior knowledge of the 1,600 results, that does change the interpretation. For any single test we have the same $\alpha = 0.05$ chance of a false positive, and we should consider this a valid result. At this point, we have no reason to be more suspicious of this result than any other individual test we run on other data sets.
+
+After we find our significant result and then go and share knowledge with our colleague who ran 1,600 tests, we are at the same situation as the prior knowledge before we run the tests. We now have knowledge and expectation of the results for the remaining covariates and outcomes. It is no longer reasonable to rerun the tests knowing how they will turn out (except if we believe the tests were not run correctly, and these results are not trustworthy). If we really want to build our understanding of the heterogeneous treatment effect of ZMapp and sex, we should run a new study that is designed to test that result.
 
 
 ## Collaborating with others, Part (3)
 Now, imagine that your colleague had not conducted the 80 different regressions. Instead, they tested this heterogeneous treatment effect, and only this heterogeneous treatment effect, of their own accord. Would you be more or less inclined to believe that the heterogeneous treatment effect really exists? Why? Is there a general principle that is guiding your reasoning?
 
-**Answer:** ...
+**Answer:** 
+
+In general, we have to consider the prior knowledge of the situation no matter who is running the test.  Whether it is us or our colleague who runs the test is less important than what other tests were run prior to this result. The statistical tools we use are designed to give us a result with a reasonable false positive rate determined by $\alpha$. A single test run in good faith with no prior knowledge of other test results should be viewed as valid and fair until we have evidence to the contrary. I would be inclined to believe the single test result.
+
+A natural follow up question to this result would be asking if the heterogeneous treatment effect is exhibited in other outcomes or covariates. Immediately running 1,600 more tests still is not the right next move. The more tests we run, the greater the risk that we encounter at least 1 false positive along the way. The next step should be an intentional and good faith effort to verify the HTE. There may be other variables in our data set that make sense to test given our understanding of ZMapp, Ebola, and gender. If this is a question of critical importance then it may require a separate experiment to verify the existence and significance of the effect.
